@@ -172,7 +172,9 @@ func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints stri
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}
 	uri, _ := url.Parse(fmt.Sprintf("%v/%v", o.instanceURL, o.queryURL))
-	uri.Query().Add("q", query)
+	q := uri.Query()
+	q.Set("q", query)
+	uri.RawQuery = q.Encode()
 
 	b, err := doGet(uri.String(), o.token.AccessToken)
 	if err != nil {
