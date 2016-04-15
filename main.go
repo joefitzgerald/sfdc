@@ -54,6 +54,6 @@ func main() {
 	}
 
 	pkg := getPackageName(dir)
-	writeCommonFile(dir, pkg)
+	sfdc.writeCommonFile(dir, pkg)
 	sfdc.writeModelFiles(dir, pkg)
 }

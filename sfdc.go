@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/joefitzgerald/sfdc/parser"
@@ -38,6 +39,30 @@ func getPackageName(dir string) string {
 	return pkg
 }
 
+type field struct {
+	SObjectField *force.SObjectField
+	FieldName    string
+}
+
+func buildFields(obj *force.SObjectDescription) []field {
+	var fields []field
+	for _, f := range obj.Fields {
+		clean := cleanname(f.Name)
+		fields = append(fields, field{SObjectField: f, FieldName: clean})
+	}
+	for _, f := range fields {
+		count := 1
+		for i, f2 := range fields {
+			if f.FieldName == f2.FieldName && f.SObjectField.Name != f2.SObjectField.Name {
+				f3 := &fields[i]
+				f3.FieldName = f3.FieldName + strconv.Itoa(count)
+				count = count + 1
+			}
+		}
+	}
+	return fields
+}
+
 func (sfdc *SFDC) writeModelFiles(dir string, pkg string) {
 	// Run generate for each object.
 	for _, sobject := range sfdc.SObjects {
@@ -53,16 +78,20 @@ func (sfdc *SFDC) writeModelFiles(dir string, pkg string) {
 			log.Fatal(err)
 		}
 
+		fields := buildFields(sobjectDescription)
+
 		var context = struct {
 			PackageName        string
 			TypeName           string
 			SObject            *force.SObjectMetaData
 			SObjectDescription *force.SObjectDescription
+			Fields             []field
 		}{
 			PackageName:        pkg,
 			TypeName:           name,
 			SObject:            sobject,
 			SObjectDescription: sobjectDescription,
+			Fields:             fields,
 		}
 
 		var buf bytes.Buffer
@@ -72,8 +101,6 @@ func (sfdc *SFDC) writeModelFiles(dir string, pkg string) {
 
 		src, err := format.Source(buf.Bytes())
 		if err != nil {
-			// Should never happen, but can arise when developing this code.
-			// The user can compile the output to see the error.
 			log.Printf("warning: internal error: invalid Go generated: %s", err)
 			log.Printf("warning: compile the package to analyze the error")
 			src = buf.Bytes()
@@ -87,12 +114,34 @@ func (sfdc *SFDC) writeModelFiles(dir string, pkg string) {
 	}
 }
 
-func writeCommonFile(dir string, pkg string) {
+type sObjectItem struct {
+	ObjectName   string
+	ResourcesURI string
+	SObject      *force.SObjectMetaData
+}
+
+func (sfdc *SFDC) writeCommonFile(dir string, pkg string) {
 	var buf bytes.Buffer
 	var context = struct {
-		PackageName string
+		PackageName  string
+		Version      string
+		ResourcesURI string
+		Objects      []*sObjectItem
 	}{
-		PackageName: pkg,
+		PackageName:  pkg,
+		Version:      sfdc.Version,
+		ResourcesURI: sfdc.ResourcesURI,
+	}
+	for _, sobject := range sfdc.SObjects {
+		if sfdc.isFiltered(sobject.Name) {
+			continue
+		}
+		o := &sObjectItem{
+			ObjectName:   cleanname(sobject.Name),
+			ResourcesURI: sfdc.ResourcesURI,
+			SObject:      sobject,
+		}
+		context.Objects = append(context.Objects, o)
 	}
 	if err := commonTmpl.Execute(&buf, context); err != nil {
 		log.Fatalf("generating code: %v", err)
@@ -100,8 +149,6 @@ func writeCommonFile(dir string, pkg string) {
 
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
-		// Should never happen, but can arise when developing this code.
-		// The user can compile the output to see the error.
 		log.Printf("warning: internal error: invalid Go generated: %s", err)
 		log.Printf("warning: compile the package to analyze the error")
 		src = buf.Bytes()
@@ -127,7 +174,8 @@ type SFDC struct {
 }
 
 func (sfdc *SFDC) getResources() error {
-	uri := fmt.Sprintf("/services/data/%v", sfdc.Version)
+	sfdc.ResourcesURI = fmt.Sprintf("/services/data/%v", sfdc.Version)
+	uri := sfdc.ResourcesURI
 	return sfdc.API.Get(uri, nil, &sfdc.Resources)
 }
 
