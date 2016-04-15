@@ -171,7 +171,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints stri
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}
-	uri, _ := url.Parse(fmt.Sprintf("%v/%v", o.instanceURL, o.queryURL))
+	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.instanceURL, o.queryURL))
 	q := uri.Query()
 	q.Set("q", query)
 	uri.RawQuery = q.Encode()
@@ -185,7 +185,25 @@ func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints stri
 	if err != nil {
 		return nil, err
 	}
-	return r.Records, nil
+	if r.Done {
+		return r.Records, nil
+	}
+	results := r.Records
+	for {
+		b, err = doGet(fmt.Sprintf("%v%v", o.instanceURL, r.NextRecordsURL), o.token.AccessToken)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(b, &r)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, r.Records...)
+		if r.Done {
+			return results, nil
+		}
+	}
 }
 `))
 
