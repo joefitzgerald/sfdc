@@ -240,6 +240,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	// SFDCDateLayout is used to convert SFDC DateTime strings correctly
+	SFDCDateLayout = "2006-01-02T15:04:05.000Z"
+)
+
 // Config is SFDC API configuration
 type Config struct {
 	Token         *oauth2.Token {{backtick}}ignored:"true"{{backtick}}
