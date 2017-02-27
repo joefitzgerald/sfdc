@@ -119,7 +119,6 @@ package {{.PackageName}}
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"unicode/utf8"
@@ -156,17 +155,13 @@ func (o *{{cleannamelower .SObject.Name}}) AllFields() string {
   return strings.Join(s, ", ")
 }
 
-func (o *{{cleannamelower .SObject.Name}}) BuildRequest(uri string) (*http.Request, error) {
-	return buildRequest(uri, o.config.token)
-}
-
 func (o *{{cleannamelower .SObject.Name}}) Get(id string) (*{{cleanname .SObject.Name}}, error) {
 	uri := fmt.Sprintf("%v/%v/%v", o.InstanceURL, o.SobjectURL, id)
-	req, err := o.BuildRequest(uri)
+	req, err := BuildRequest(uri)
 	if err != nil {
 		return nil, err
 	}
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.config.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -196,12 +191,12 @@ func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints stri
 		if r.NextRecordsURL != "" {
 			reqURI = fmt.Sprintf("%v%v", o.InstanceURL, r.NextRecordsURL)
 		}
-		req, err := o.BuildRequest(reqURI)
+		req, err := BuildRequest(reqURI)
 		if err != nil {
 			return nil, err
 		}
 
-		res, err := http.DefaultClient.Do(req)
+		res, err := o.config.Client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -230,6 +225,8 @@ var commonTmpl = template.Must(template.New("common").Funcs(template.FuncMap{
 package {{.PackageName}}
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -237,7 +234,9 @@ import (
 
 // Config is SFDC API configuration
 type Config struct {
-	token         *oauth2.Token
+	Token         *oauth2.Token {{backtick}}ignored:"true"{{backtick}}
+	Oauth2Config  *oauth2.Config {{backtick}}ignored:"true"{{backtick}}
+	Client        *http.Client {{backtick}}ignored:"true"{{backtick}}
 	Version       string {{backtick}}default:"v37.0"{{backtick}}
 	ClientID      string {{backtick}}required:"true"{{backtick}}
 	ClientSecret  string {{backtick}}required:"true"{{backtick}}
@@ -249,7 +248,7 @@ type Config struct {
 
 // API is a SalesForce REST API client.
 type API struct {
-	config       *Config
+	Config       *Config
 	InstanceURL  string
 	ResourceURL  string
 	QueryURL     string
@@ -260,64 +259,58 @@ type API struct {
 
 // New creates a SalesForce API that you can use to access the SalesForce REST
 // API.
-func New(c *Config) *API {
+func New(c *Config) (*API, error) {
+	if c.Oauth2Config == nil {
+		c.Oauth2Config = &oauth2.Config{
+			ClientID:     c.ClientID,
+			ClientSecret: c.ClientSecret,
+			Scopes:       nil,
+			Endpoint:     oauth2.Endpoint{
+				AuthURL:  "https://login.salesforce.com/services/oauth2/authorize",
+				TokenURL: "https://login.salesforce.com/services/oauth2/token",
+			},
+		}
+	}
+	if c.Token == nil {
+		token, err := c.Oauth2Config.PasswordCredentialsToken(context.Background(), c.Username, c.Password)
+		if err != nil {
+			return nil, err
+		}
+		c.Token = token
+	}
+	c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
+	instanceURL, ok := c.Token.Extra("instance_url").(string)
+	if !ok {
+		return nil, errors.New("instance_url not available in the token")
+	}
 	api := &API{
-		config: c,
+		Config: c,
+		InstanceURL:  instanceURL,
 		ResourceURL:  "{{.ResourcesURI}}",
 		QueryURL:     "{{.ResourcesURI}}/query",
 		QueryAllURL:  "{{.ResourcesURI}}/queryAll",
 		{{range .Objects}}{{.ObjectName}}: &{{tolower .ObjectName}} {
 			config: c,
+			InstanceURL: instanceURL,
+			DescribeURL: "{{valueforkey "describe" .SObject.URLs}}",
+			SobjectURL:  "{{valueforkey "sobject" .SObject.URLs}}",
+			QueryURL:    "{{.ResourcesURI}}/query",
+			QueryAllURL: "{{.ResourcesURI}}/queryAll",
 		},
 		{{end}}
 	}
 
-	return api
-}
-
-// Authorize fetches a new OAuth 2.0 access token from SalesForce and makes it
-// available for use by the API.
-func (api *API) Authorize() error {
-	config := &oauth2.Config{
-		ClientID:     api.config.ClientID,
-		ClientSecret: api.config.ClientSecret,
-		Scopes:       nil,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://login.salesforce.com/services/oauth2/authorize",
-			TokenURL: "https://login.salesforce.com/services/oauth2/token",
-		},
-	}
-
-	token, err := config.PasswordCredentialsToken(oauth2.NoContext, api.config.Username, api.config.Password)
-	if err != nil {
-		return err
-	}
-	instanceURL := token.Extra("instance_url").(string)
-	api.InstanceURL = instanceURL
-	{{range .Objects}}api.{{.ObjectName}} = &{{tolower .ObjectName}}{
-		config:      api.config,
-		InstanceURL: instanceURL,
-		DescribeURL: "{{valueforkey "describe" .SObject.URLs}}",
-		SobjectURL:  "{{valueforkey "sobject" .SObject.URLs}}",
-		QueryURL:    "{{.ResourcesURI}}/query",
-		QueryAllURL: "{{.ResourcesURI}}/queryAll",
-	}
-	{{end}}
-	return nil
+	return api, nil
 }
 
 // BuildRequest creates an http.Request with defaults set for SFDC
-func buildRequest(uri string, accessToken *oauth2.Token) (*http.Request, error) {
+func BuildRequest(uri string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	if accessToken != nil {
-		accessToken.SetAuthHeader(req)
-	}
-
 	return req, nil
 }
 
