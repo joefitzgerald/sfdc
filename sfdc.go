@@ -95,7 +95,7 @@ func (sfdc *SFDC) writeModelFiles(dir string, pkg string) {
 		}
 
 		var buf bytes.Buffer
-		if err := generatedTmpl.Execute(&buf, context); err != nil {
+		if err = generatedTmpl.Execute(&buf, context); err != nil {
 			log.Fatalf("generating code: %v", err)
 		}
 

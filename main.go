@@ -8,7 +8,7 @@ import (
 )
 
 type config struct {
-	Version       string `default:"v36.0"`
+	Version       string `default:"v37.0"`
 	ClientID      string `required:"true"`
 	ClientSecret  string `required:"true"`
 	Username      string `required:"true"`
