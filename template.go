@@ -117,6 +117,7 @@ var generatedTmpl = template.Must(template.New("generated").Funcs(template.FuncM
 package {{.PackageName}}
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -144,7 +145,7 @@ type {{cleannamelower .SObject.Name}} struct {
 // {{cleanname .SObject.Name}} object.
 type {{cleanname .SObject.Name}}QueryResponse struct {
 	Done           bool                          {{jsontag "done"}}
-  NextRecordsURL string                        {{jsontag "nextRecordsUrl"}}
+	NextRecordsURL string                        {{jsontag "nextRecordsUrl"}}
 	Records        []{{cleanname .SObject.Name}} {{jsontag "records"}}
 	TotalSize      int                           {{jsontag "totalSize"}}
 }
@@ -159,12 +160,12 @@ func (o *{{cleannamelower .SObject.Name}}) AllFields() string {
 		{{end}}
 	}
 	o.allFields = strings.Join(s, ", ")
-  return o.allFields
+ 	return o.allFields
 }
 
-func (o *{{cleannamelower .SObject.Name}}) Get(id string) (*{{cleanname .SObject.Name}}, error) {
+func (o *{{cleannamelower .SObject.Name}}) Get(ctx context.Context, id string) (*{{cleanname .SObject.Name}}, error) {
 	uri := fmt.Sprintf("%v/%v/%v", o.InstanceURL, o.SobjectURL, id)
-	req, err := BuildRequest(uri)
+	req, err := BuildRequest(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +182,7 @@ func (o *{{cleannamelower .SObject.Name}}) Get(id string) (*{{cleanname .SObject
 	return &r, nil
 }
 
-func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints string) ([]{{cleanname .SObject.Name}}, error) {
+func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields string, constraints string) ([]{{cleanname .SObject.Name}}, error) {
 	query := fmt.Sprintf("SELECT %v FROM {{cleanname .SObject.Name}}", fields)
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
@@ -198,7 +199,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(fields string, constraints stri
 		if r.NextRecordsURL != "" {
 			reqURI = fmt.Sprintf("%v%v", o.InstanceURL, r.NextRecordsURL)
 		}
-		req, err := BuildRequest(reqURI)
+		req, err := BuildRequest(ctx, reqURI)
 		if err != nil {
 			return nil, err
 		}
@@ -317,11 +318,12 @@ func New(c *Config) (*API, error) {
 }
 
 // BuildRequest creates an http.Request with defaults set for SFDC
-func BuildRequest(uri string) (*http.Request, error) {
+func BuildRequest(ctx context.Context, uri string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	return req, nil
