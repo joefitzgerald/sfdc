@@ -24,6 +24,8 @@ First, get this package and ensure that your `$GOPATH/bin` is in your `$PATH`:
 go get -u github.com/joefitzgerald/sfdc
 ```
 
+**Note:** this package requires Go 1.8 or later.
+
 Create a new package (e.g. sfdc), and create a file in the package called `definition.go`
 (note that this can have any name you want). In this file, place the following
 contents:
