@@ -7,10 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/joefitzgerald/sfdc/parser"
 	"github.com/nimajalali/go-force/force"
 )
 
@@ -32,7 +32,7 @@ func New(c config, objectNames string) *SFDC {
 }
 
 func getPackageName(dir string) string {
-	pkg, err := parser.GetPackageName(dir, *outputPrefix, *outputSuffix+".go")
+	pkg, err := GetPackageName(dir, *outputPrefix, *outputSuffix+".go")
 	if err != nil {
 		log.Fatalf("parsing package: %v", err)
 	}
@@ -60,6 +60,9 @@ func buildFields(obj *force.SObjectDescription) []field {
 			}
 		}
 	}
+	sort.Slice(fields, func(i int, j int) bool {
+		return strings.Compare(fields[i].FieldName, fields[j].FieldName) == -1
+	})
 	return fields
 }
 
@@ -143,6 +146,9 @@ func (sfdc *SFDC) writeCommonFile(dir string, pkg string) {
 		}
 		context.Objects = append(context.Objects, o)
 	}
+	sort.Slice(context.Objects, func(i int, j int) bool {
+		return strings.Compare(context.Objects[i].ObjectName, context.Objects[j].ObjectName) == -1
+	})
 	if err := commonTmpl.Execute(&buf, context); err != nil {
 		log.Fatalf("generating code: %v", err)
 	}
