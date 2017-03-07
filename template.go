@@ -252,12 +252,12 @@ type Config struct {
 	Oauth2Config  *oauth2.Config {{backtick}}ignored:"true"{{backtick}}
 	Client        *http.Client {{backtick}}ignored:"true"{{backtick}}
 	Version       string {{backtick}}default:"v37.0"{{backtick}}
-	ClientID      string {{backtick}}required:"true"{{backtick}}
-	ClientSecret  string {{backtick}}required:"true"{{backtick}}
-	Username      string {{backtick}}required:"true"{{backtick}}
-	Password      string {{backtick}}required:"true"{{backtick}}
-	SecurityToken string {{backtick}}required:"true"{{backtick}}
-	Environment   string {{backtick}}default:"Production"{{backtick}}
+	ClientID      string {{backtick}}required:"true" json:"sfdc_clientid,omitempty"{{backtick}}
+	ClientSecret  string {{backtick}}required:"true" json:"sfdc_clientsecret,omitempty"{{backtick}}
+	Username      string {{backtick}}required:"true" json:"sfdc_username,omitempty"{{backtick}}
+	Password      string {{backtick}}required:"true" json:"sfdc_password,omitempty"{{backtick}}
+	SecurityToken string {{backtick}}required:"true" json:"sfdc_securitytoken,omitempty"{{backtick}}
+	Environment   string {{backtick}}default:"Production" json:"sfdc_environment,omitempty"{{backtick}}
 }
 
 // API is a SalesForce REST API client.
