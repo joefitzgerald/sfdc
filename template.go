@@ -218,6 +218,54 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 
 	return results, nil
 }
+
+// QueryAsync returns a channel that {{cleannamelower .SObject.Name}} are written to.
+// The channel is closed when all records have been written.
+// Errors are written to the returned error channel.
+// The query aborts when an error is encountered.
+func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, fields string, constraints string) (<- chan []{{cleanname .SObject.Name}}, <- chan error) {
+	query := fmt.Sprintf("SELECT %v FROM {{cleanname .SObject.Name}}", fields)
+	if utf8.RuneCountInString(constraints) > 0 {
+		query = fmt.Sprintf("%v WHERE %v", query, constraints)
+	}
+	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.InstanceURL, o.QueryURL))
+	q := uri.Query()
+	q.Set("q", query)
+	uri.RawQuery = q.Encode()
+	reqURI := uri.String()
+
+	result := make(chan []{{cleanname .SObject.Name}})
+	errs := make(chan error, 1)
+	go func() {
+		var r {{cleanname .SObject.Name}}QueryResponse
+		for !r.Done {
+			if r.NextRecordsURL != "" {
+				reqURI = fmt.Sprintf("%v%v", o.InstanceURL, r.NextRecordsURL)
+			}
+			req, err := BuildRequest(ctx, reqURI)
+			if err != nil {
+				errs <- err
+				return
+			}
+
+			res, err := o.config.Client.Do(req)
+			if err != nil {
+				errs <- err
+				return
+			}
+			defer res.Body.Close()
+
+			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+				errs <- err
+				return
+			}
+			result <- r.Records
+		}
+		close(result)
+	}()
+
+	return result, errs
+}
 `))
 
 var commonTmpl = template.Must(template.New("common").Funcs(template.FuncMap{
