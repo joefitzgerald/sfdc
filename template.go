@@ -223,7 +223,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 // The channel is closed when all records have been written.
 // Errors are written to the returned error channel.
 // The query aborts when an error is encountered.
-func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, fields string, constraints string) (<- chan []{{cleanname .SObject.Name}}, <- chan error) {
+func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, fields string, constraints string) (<-chan []{{cleanname .SObject.Name}}, <-chan error) {
 	query := fmt.Sprintf("SELECT %v FROM {{cleanname .SObject.Name}}", fields)
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
@@ -245,19 +245,19 @@ func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, field
 			req, err := BuildRequest(ctx, reqURI)
 			if err != nil {
 				errs <- err
-				return
+				break
 			}
 
 			res, err := o.config.Client.Do(req)
 			if err != nil {
 				errs <- err
-				return
+				break
 			}
 			defer res.Body.Close()
 
 			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 				errs <- err
-				return
+				break
 			}
 			result <- r.Records
 		}
