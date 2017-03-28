@@ -119,6 +119,7 @@ package {{.PackageName}}
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -187,7 +188,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}
-	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.InstanceURL, o.QueryURL))
+	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.InstanceURL, o.QueryAllURL))
 	q := uri.Query()
 	q.Set("q", query)
 	uri.RawQuery = q.Encode()
@@ -209,7 +210,16 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 			return nil, err
 		}
 		defer res.Body.Close()
-
+		if res.StatusCode >= 400 {
+			var errorMessage []struct {
+				Message   string {{backtick}}json:"message"{{backtick}}
+				ErrorCode string {{backtick}}json:"errorCode"{{backtick}}
+			}
+			if err := json.NewDecoder(res.Body).Decode(&errorMessage); err != nil {
+				return nil, errors.New("got bad result")
+			}
+			return nil, errors.New(errorMessage[0].Message)
+		}
 		if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 			return nil, err
 		}
@@ -228,7 +238,7 @@ func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, field
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}
-	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.InstanceURL, o.QueryURL))
+	uri, _ := url.Parse(fmt.Sprintf("%v%v", o.InstanceURL, o.QueryAllURL))
 	q := uri.Query()
 	q.Set("q", query)
 	uri.RawQuery = q.Encode()
@@ -254,7 +264,18 @@ func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, field
 				break
 			}
 			defer res.Body.Close()
-
+			if res.StatusCode >= 400 {
+				var errorMessage []struct {
+					Message   string {{backtick}}json:"message"{{backtick}}
+					ErrorCode string {{backtick}}json:"errorCode"{{backtick}}
+				}
+				if err := json.NewDecoder(res.Body).Decode(&errorMessage); err != nil {
+					errs <- errors.New("got bad result")
+					break
+				}
+				errs <- errors.New(errorMessage[0].Message)
+				break
+			}
 			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 				errs <- err
 				break
