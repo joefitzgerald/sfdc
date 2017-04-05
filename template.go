@@ -220,6 +220,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 			}
 			return nil, errors.New(errorMessage[0].Message)
 		}
+		r.Records = nil
 		if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 			return nil, err
 		}
@@ -276,6 +277,7 @@ func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, field
 				errs <- errors.New(errorMessage[0].Message)
 				break
 			}
+			r.Records = nil
 			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 				errs <- err
 				break
