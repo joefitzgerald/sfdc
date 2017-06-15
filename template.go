@@ -307,6 +307,7 @@ package {{.PackageName}}
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -357,13 +358,11 @@ func New(c *Config) (*API, error) {
 		}
 	}
 	if c.Token == nil {
-		token, err := c.Oauth2Config.PasswordCredentialsToken(context.Background(), c.Username, c.Password)
+		err := c.updateConfigWithToken()
 		if err != nil {
-			return nil, err
+			return nil, errors.New("authentication failed, no token")
 		}
-		c.Token = token
-	}
-	c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
+	}	
 	instanceURL, ok := c.Token.Extra("instance_url").(string)
 	if !ok {
 		return nil, errors.New("instance_url not available in the token")
@@ -386,6 +385,28 @@ func New(c *Config) (*API, error) {
 	}
 
 	return api, nil
+}
+
+// EnsureValidToken makes sure there's always a valid token
+func (c *Config) EnsureValidToken() error {
+	if !c.Token.Valid() {
+		log.Println("token was invalid, refreshing...")
+		err := c.updateConfigWithToken()
+		if err != nil {
+			return errors.New("authentication failed, no token")
+		}
+	}
+	return nil
+}
+
+func (c *Config) updateConfigWithToken() error {
+	token, err := c.Oauth2Config.PasswordCredentialsToken(context.Background(), c.Username, c.Password)
+	if err != nil {
+		return err
+	}
+	c.Token = token
+	c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
+	return nil
 }
 
 // BuildRequest creates an http.Request with defaults set for SFDC
