@@ -362,7 +362,8 @@ func New(c *Config) (*API, error) {
 		if err != nil {
 			return nil, errors.New("authentication failed, no token")
 		}
-	}	
+	}
+	c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
 	instanceURL, ok := c.Token.Extra("instance_url").(string)
 	if !ok {
 		return nil, errors.New("instance_url not available in the token")
@@ -395,6 +396,7 @@ func (c *Config) EnsureValidToken() error {
 		if err != nil {
 			return errors.New("authentication failed, no token")
 		}
+		c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
 	}
 	return nil
 }
@@ -405,7 +407,6 @@ func (c *Config) updateConfigWithToken() error {
 		return err
 	}
 	c.Token = token
-	c.Client = c.Oauth2Config.Client(context.Background(), c.Token)
 	return nil
 }
 
