@@ -184,7 +184,7 @@ func (o *{{cleannamelower .SObject.Name}}) Get(ctx context.Context, id string) (
 }
 
 func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields string, constraints string) ([]{{cleanname .SObject.Name}}, error) {
-	query := fmt.Sprintf("SELECT %v FROM {{cleanname .SObject.Name}}", fields)
+	query := fmt.Sprintf("SELECT %v FROM {{.SObject.Name}}", fields)
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}
@@ -235,7 +235,7 @@ func (o *{{cleannamelower .SObject.Name}}) Query(ctx context.Context, fields str
 // Errors are written to the returned error channel.
 // The query aborts when an error is encountered.
 func (o *{{cleannamelower .SObject.Name}}) QueryAsync(ctx context.Context, fields string, constraints string) (<-chan []{{cleanname .SObject.Name}}, <-chan error) {
-	query := fmt.Sprintf("SELECT %v FROM {{cleanname .SObject.Name}}", fields)
+	query := fmt.Sprintf("SELECT %v FROM {{.SObject.Name}}", fields)
 	if utf8.RuneCountInString(constraints) > 0 {
 		query = fmt.Sprintf("%v WHERE %v", query, constraints)
 	}

@@ -1,4 +1,4 @@
-package main
+package main // import "github.com/joefitzgerald/sfdc"
 
 import (
 	"flag"
@@ -8,7 +8,7 @@ import (
 )
 
 type config struct {
-	Version       string `default:"v37.0"`
+	Version       string `default:"v44.0"`
 	ClientID      string `required:"true"`
 	ClientSecret  string `required:"true"`
 	Username      string `required:"true"`
