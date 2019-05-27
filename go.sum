@@ -1,4 +1,6 @@
 github.com/kelseyhightower/envconfig v1.3.0 h1:IvRS4f2VcIQy6j4ORGIf9145T/AsUB+oY8LyvN8BXNM=
 github.com/kelseyhightower/envconfig v1.3.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
+github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
+github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/nimajalali/go-force v0.0.0-20180615191228-2b94c45dfae2 h1:zFB88kglSTQJJfdHJg7/nHPHQeb19YCrolA/UcfDUJE=
 github.com/nimajalali/go-force v0.0.0-20180615191228-2b94c45dfae2/go.mod h1:+C98+CJCRbHIa3rjNvF9wsmyWILFcbDiptIv0hoGSRM=
