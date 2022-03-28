@@ -10,11 +10,11 @@ A `go` client library for the Salesforce REST API.
 go get -u github.com/joefitzgerald/sfdc
 ```
 
-**Note:** this package requires Go 1.18 or later.
+**Note:** this package requires `go` `1.18` or later.
 
 ### Connect to the Salesforce API
 
-⚠️ You should make sure you have completed the steps outlined in [Getting Started with the Salesforce API](#getting-started-with-the-salesforce-api) section.
+⚠️ You should make sure you have completed the steps outlined in the [Getting Started with the Salesforce API](#getting-started-with-the-salesforce-api) section, below.
 
 ```go
 package main
