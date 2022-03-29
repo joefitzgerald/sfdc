@@ -19,6 +19,17 @@ go get -u github.com/joefitzgerald/sfdc
 ```go
 package main
 
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/joefitzgerald/sfdc"
+	"github.com/joefitzgerald/sfdc/auth/devicecode"
+)
+
 func main() {
 	// First: Fetch a Token
 	// Note: if you request the `refresh_token` scope, this token includes a 
@@ -39,7 +50,7 @@ func main() {
 
 	// Next: Use the token to construct a sfdc.Instance and then an sfdc.Entity
 	// for each SObject you wish to query or interact with.
-	instance, err := sfdc.New(sfdc.WithToken(context.Background(), config.Config, token), sfdc.WithURL(fmt.Sprintf("https://%s.my.salesforce.com", domain)))
+	instance, err := sfdc.New(sfdc.WithToken(context.Background(), config.Config, token))
 	type Opportunity struct {
 		ID          string `json:"Id,omitempty"`
 		Name        string `json:"Name,omitempty"`
