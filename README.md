@@ -1,4 +1,4 @@
-# `sfdc`
+# `sfdc` [![Build and Test](https://github.com/joefitzgerald/sfdc/actions/workflows/go.yml/badge.svg)](https://github.com/joefitzgerald/sfdc/actions/workflows/go.yml)
 
 A `go` client library for the Salesforce REST API.
 
