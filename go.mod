@@ -12,7 +12,7 @@ require (
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/gomega v1.31.0
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/net v0.20.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
