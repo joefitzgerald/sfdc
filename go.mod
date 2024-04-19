@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/onsi/gomega v1.32.0
+	github.com/onsi/gomega v1.33.0
 	github.com/sclevine/spec v1.4.0
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 )
