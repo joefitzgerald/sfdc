@@ -2,7 +2,7 @@ module github.com/joefitzgerald/sfdc
 
 go 1.20
 
-require golang.org/x/oauth2 v0.20.0
+require golang.org/x/oauth2 v0.21.0
 
 require (
 	github.com/google/go-cmp v0.6.0 // indirect
